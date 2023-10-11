@@ -1,0 +1,33 @@
+# python artifacts
+__pycache__/
+*.egg-info/
+*.py[oc]
+venv/
+
+# gcc artifacts
+a.out
+
+# root project paths to ignore
+/spoilers-and-code/src/assets/
+/spoilers-and-code/src/build/
+/spoilers-and-code/src/releases/
+
+# project paths (cv)
+/spoilers-and-code/src/cv-builder/build/
+/spoilers-and-code/src/cv-builder/test-data/
+
+# project paths (elf-binary)
+/spoilers-and-code/src/elf-binary/build/
+
+# project paths (elf-binary-patcher)
+/spoilers-and-code/src/elf-binary-patcher/build/
+
+# project paths (elf-binary-launcher)
+/spoilers-and-code/src/elf-binary-launcher/build/
+/spoilers-and-code/src/elf-binary-launcher/src/payload.h
+
+# project paths (pdf-patcher)
+/spoilers-and-code/src/pdf-patcher/build/
+/spoilers-and-code/src/pdf-patcher/test-data/
+/spoilers-and-code/src/pdf-patcher/pdfp/actions/find_and_replace_text.py
+/spoilers-and-code/src/pdf-patcher/pdfp/parser

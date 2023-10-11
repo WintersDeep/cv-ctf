@@ -1,0 +1,2 @@
+# python3 imports
+from .generate_hidden_string_action import GenerateHiddenStringAction
