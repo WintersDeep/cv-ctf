@@ -2,13 +2,13 @@
 
 This flag is embedded in an ELF executable which wants a password. Given the correct password the binary will yield the flag. Unfortunatly, so the hook goes, I "forgot" the password.
 
-This one I personally consider the hardest flag, and its also the only one I'm not giving answers for (other than the fact that all the source and build tools are provided, and I'm going to tell you exactly how it works). It's my way of making sure you don't have a complete answer sheet, so I know anyone able to give the last flag has done some leg work. The hints here however will make accessing the password relatively trivial if your familiar with some assembly and modern debugging tools.
+This one I personally consider the hardest flag, and its also the only one I'm not giving answers for (other than the fact that all the source and build tools are provided, and I'm going to tell you exactly how it works). It's my way of making sure there isn't a complete answer sheet and I know anyone able to give the last flag has done some leg work. The hints here however will make accessing the password easier, esp. if your familiar with some assembly and modern debugging tools.
 
 ## Polymorphic Build Process
 
 Various aspects of the code are generated randomly at build-time. Whilst this does make production of an automated solver for this more difficult (or at least a future proof one), it was actually implemented for two other reasons:
 
-- To be a horrible string obfuscation technique (see [how strings are protected](#protected-strings)).
+- As a string obfuscation technique (see [how strings are protected](#protected-strings)).
 - To be a demonstration of a technique malware might use to avoid byte sequence fingerprinting.
 - Because I thought it was a neat property to have.
 
@@ -22,7 +22,7 @@ The native loader does not look at this value, it doesn't need to, there is no s
 
 The binary claims to be, an nominally is, an 32-bit binary. However, thats not really the full story. The whole purpose of the 32-bit code is to unpack the real binary, which is compiled in 64-bit. After it has unpacked this code, it changes the CPU to long mode and hands off to the unpacked content. 
 
-This results in a 32-bit process that is executing 64-bit instructions. An important distinction here - this action does not change the nature of the parent process, only the type of instructions that it is executing. This can have interesting side-effects that might catch you off-gaurd (for example trying to use `mmap` via a 64-bit `syscall` will likely fail unless passed the `MAP_32BIT` flag when running in a 32-bit process).
+This results in a 32-bit process that is executing 64-bit instructions. An important distinction here - this action does not change the nature of the parent process, only the type of instructions that it is executing. This can have interesting side-effects that might catch you off-gaurd (for example trying to use `mmap` via a 64-bit `syscall` will likely fail unless passed the `MAP_32BIT` flag when running in a 32-bit process) - I was intending on using this for deceptive logic (a `mmap` call I knew would fail, so people following along in disassemblers - rather than debuggers - might follow the wrong branch).
 
 It can also have some interesting impacts to debugging; historically this made the process very hard to debug - 64-bit debuggers refused to attach to a 32-bit process, whilst a 32-bit debugger would choke once the instruction set changed, either crashing outright or reporting the wrong instructions. It could even messed with `strace` resulting in it printing garbage. Some debuggers now offer a way to change instruction set at runtime, but this is not always the case. Even where it is available it can be buggy and usually requires an operator to tell it to change.
 
@@ -32,20 +32,20 @@ During an interview in the way back. after answering a question about stack smas
 
 The 64-bit code is XOR encoded against a byte key (wrapping at `0xff`) that is initialised to 1 and incremended by:
 
-- `FIZZ` if the byte index is divisible by `FIZZ_UP`.
-- `BUZZ` if the byte index is divisible by `BUZZ_UP`.
-- `FIZZ + BUZZ` if the byte index is divisible by both `FIZZ_UP` and `BUZZ_UP`.
-- By `1` if the byte index is divisible by neither `FIZZ_UP` nor `BUZZ_UP`.
+- `FIZZ` if the byte index is a mulitple of `FIZZ_UP`.
+- `BUZZ` if the byte index is a mulitple of `BUZZ_UP`.
+- `FIZZ + BUZZ` if the byte index is a multiple of both `FIZZ_UP` and `BUZZ_UP`.
+- By `1` if the byte index is none of the above.
 
 The specific values for `FIZZ`, `BUZZ`, `FIZZ_UP`, and `BUZZ_UP` are randomly generated per build.
 
 ## Memory Integrity
 
-Once you enter the 64-bit code the program periodically calculates a checksum of the entire 64-bit address space, excl. one or two specific offsets (DWORD values that relate to this checksum and cannot be calculated ahead of time) - this checksum is salted. The first "check" is salted with a random per-build value, with each successive check being salted with the output of the previous one. 
+Once you enter the 64-bit code the program periodically calculates a checksum of the entire 64-bit code memory region, excl. one or two specific offsets (DWORD values that relate to this checksum and cannot be calculated ahead of time) - this checksum is salted. The first "check" is salted with a random per-build value, with each successive check being salted with the output of the previous one. 
 
 This means any patching of the software will break this checksum value - this could even be incidental such as by placing software breakpoints which replace the first byte of the specified program instruction with an debugger instruction such as `int3` (`0xcc`), `into` (`0xce`), or `int1` (`0xf1`). It is for this reason that at some point it will be almost essential you use a tool that supports hardware breakpoints for this CTF.
 
-This checksum is used in the protection of sensitive strings (see [sensitive strings](#sensitive-protected-strings)). If the checksum value is incorrect, these strings will fundementally fail to decode properly. It is unlikely the software will tell you that you broke this integrity mechanism (the password check will just fail), although there is one specific situation where this is disclosed.
+This checksum is used in the protection of sensitive strings (see [sensitive strings](#sensitive-protected-strings)). If the checksum value is incorrect, these strings will fundementally fail to decode properly. It is unlikely the software will tell you that you broke this integrity mechanism (the password check will just fail as if you gave it the wrong password), although there is one specific situation where this is disclosed.
 
 ## Protected Strings
 
@@ -62,8 +62,8 @@ Protected strings are built in memory when they are needed - they exist nowhere 
 - The order that characters are assigned into the string is entirely random.
 - Some gadgets fill zero characters - these are considered "junk" gadgets and implement behaviours to obfuscate the decoding process.
 - Most assignment gadgets (gadgets that actually build the strings) currently operate on XOR operations. They will prefer taking their operands from existing bytes in the software (i.e. to compose the letter `A` a gadget might try to find two bytes in the program text that XOR to this value). Sometimes this isn't possible, in such cases one of two things happen:
-    - The _"junk_" gadgets previously discussed can inject bytes into the software that have no specifically required value (they are literally garbage), these bytes values can be assigned to supply a missing value if required.
-    - If there are no available junk bytes to fill the value (no junk gadgets used, or no junk bytes available/inserted) a literal value to complete the XOR pair may be used.
+    - The _"junk_" gadgets previously discussed can inject bytes into the software that have no specifically required value (they are literally garbage), these bytes values can be assigned to supply a missing XOR operand if required.
+    - If there are no available junk bytes to fill the XOR operand (no junk gadgets used, or no junk bytes available/inserted) a literal value to complete the XOR pair may be used.
 
 This process has a few "benefits":
 
@@ -71,25 +71,25 @@ This process has a few "benefits":
 - As the strings are infused into the whole program text, you can only really process them by taking the whole binary (you can't just isolate the relvant data very easily).
 - Altering the program (even by software breakpoint) no longer just runs the risk of breaking the [memory integrity](#memory-integrity) mechanism; you might also break the strings in the binary (note it is entirely possible that a byte in code used to decode one string is used as an XOR component whilst decoding another one).
 - Its often easier to just place a break point at the end of a strings decoding process to see what comes out, but this leads you into a risk of placing a software breakpoint and running afoul of the integrity checking mechanism, or me deciding to randomly bury some very important business logic in the middle of that process.
-- No two builds are the same. Its very hard to tell if a string changed between builds because the instructions are variable and the memory components that they use.
+- No two builds are the same. Its very hard to tell if a string changed between builds because the instructions are variable as are the memory components that they use.
 
 However this is fairly easy to side-setp with hardware breakpoints. It just helps protect using strings to isolate program logic.
 
 ## Sensitive Strings
 
-Sensitive strings protect secrets, the flag and password. They build off the  [memory integrity](#memory-integrity) and [protected strings](#protected-strings) systems. You'll want to understand those first.
+Sensitive strings protect secrets; the flag and password. They build off the  [memory integrity](#memory-integrity) and [protected strings](#protected-strings) systems. So you'll want to understand those first.
 
-Read that... good. Sensitive strings are basically built by combining the two.
+Sensitive strings are basically built by combining the two.
 
 1. The protected string system is used to protect a binary sequence rather than an ASCII string.
 1. The current memory integrity checksum is used to seed a random number generator (merseene twister).
 1. Each byte in the binary sequence is XOR'd against the output of the random number generator until a NUL byte is encountered. The result is the protected secret.
 
-This is useful because anyone could theoretically decode the binary sequence, but it is meaningless without also knowing the correct PRNG seed. This is a weak cryptographic key, and one statergy might be to manually decode the XOR sequence and then brute forcing the PRNG seed (although I would note; the PRNG implementation might not be strictly to the book so YMMV if you don't faithfully reimplement the PRNG implementation).
+This is useful because anyone could theoretically decode the binary sequence, but it is meaningless without also knowing the correct PRNG seed. This is a weak cryptographic key, and one statergy might be to manually decode the XOR sequence and then brute forcing the PRNG seed (although I would note; the PRNG implementation might not be strictly to the book so YMMV if you don't faithfully reimplement the PRNG implementation). Brute forcing isn't even really required, you just need to know the hash initialisation value and how many times to iterate the hash algorithm to land on the correct seed value.
 
-When checking the password each byte is checked independently as its XOR decoded (meaning a single decoded character is held in memory at any time). If you ever tampered with memory and this was spotted - the random number generator is going to generate the wrong seqeunce and the XOR decode is going to be wild (in most cases the resulting "password" isn't even typeable).
+When checking the password each byte is checked independently as its XOR decoded (meaning a single decoded character is held in memory at any time). If you ever tampered with memory and this corrupted the memory integrity hash - the random number generator is going to generate the wrong seqeunce and the XOR decode is going to be wild (in most cases the resulting "password" isn't even typeable).
 
-It is possible, given the nature of random numbers, that with broken integrity you generate a sequence that is typeable, and maybe you use the debugger to set this (or you just get lucky and happened to enter that exact password - consider buying a lottery ticket). In this specific case the password will be accepted. However, when the flag string is decoded the same method is used and will generate the wrong flag. To protect against the software emitting this (as if it were the correct flag, thus possibly causing confusion) the flag is first ran through the same integrity method used for virtual memory (using the current integrity hash as salt) to generate a hash, this is compared against the flags known hash. It is astronimally improbable this hash will match the generated password given the wrong seed values, and in this very specific case the binary will tell you that you broke integrity, and that the flag it generated is not valid.
+It is possible, given the nature of random numbers, that with broken integrity seed. you still generate a sequence that is typeable, and maybe you use the debugger to step over the password check (or you just get lucky and happened to enter that exact "wrong" password - consider buying a lottery ticket). In this specific case the password will be accepted. However, when the flag string is decoded the same method is used "sensitive string" protection mechanism is used and will generate the wrong flag. To protect against the software emitting this (as if it were the correct flag, thus possibly causing confusion) the flag is first ran through the same hashing method used for memory integrity checking (using the current integrity hash as salt), this is compared against the flags known hash. It is astronimally improbable this hash will match the generated password given the wrong seed values, and in this very specific case the binary will tell you that you broke integrity, and that the flag it generated is not valid.
 
 # The framework of a solution
 

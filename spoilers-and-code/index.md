@@ -13,7 +13,7 @@ If you intend to attempt completing the CTF unassisted, proceeding beyond this p
  
 This is a good place to start if you actually want to do the CTF solo but are struggling.
  
-The hints pages contain leading clues about how to solve the CTF, but stops short of giving you actual answers. As with other sections this is split up per-flag so there isn't any risk in spoiling one flag by looking at hints for another. 
+The hints pages contain leading clues about how to solve the CTF, but stops short of giving you actual answers. As with other sections this is split up per-flag so there isn't any risk in spoiling one flag by looking at hints for another. Hints are provided one at a time to prevent giving too much information all at once.
 
 ## [Walk-Through](./docs/walk-through/flag1.md)
 
@@ -25,7 +25,7 @@ They describe in very brief terms where the flag is hidden, and how you go about
 
 The design pages discuss in detail how each flag is hidden.
 
-They also discuss why its implemented in the way it is, the types of idea that I considered but discarded (and why). This is mostly for reference, but can be useful as an intermediary between the hints and the walk-through (as in being told exactly what the adversary is and how it works, but not explictly how to deal with it).
+They also discuss why its implemented in the way it is, the types of idea that I considered but discarded (and why). This is mostly for reference, but can be useful as an intermediary between the hints and the walk-through (as in; being told exactly what the adversary is and how it works, but not explictly how to deal with it).
 
 ## [Source Code and Build Tools](./src/)
 
@@ -34,4 +34,4 @@ This directory contains the source code and build tools.
 This isn't a fully working solution - the build process requires artifacts that are not checked in (mostly the actual CV or PII elements themselves unsurprisingly). Documentation is sparse, but this isn't a production system or something designed for distribution. I found aspects of the CTF where sometimes touched upon during interview and having the code available would be benefitial to facilitate those discussions. 
  
 
-</details><!-- Hint #3/N -->
+</details>

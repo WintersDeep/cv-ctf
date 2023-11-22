@@ -87,13 +87,13 @@ class Build(CvActionBase):
             try:
                 
                 self.run_build_steps([
-                    ("building internal 64-bit binary", build_steps.BuildCrackmeInternal(config.elf_password, config.flags[3], config.elf64_build_path)),
+                    ("building internal 64-bit binary", build_steps.BuildCrackmeInternal(config.elf_password, config.flags[2], config.elf64_build_path)),
                     ("patching internal binary strings", build_steps.BuildCrackmePatchString(config.elf64_build_path, config.elf64_build_path)),
                     ("patching internal binary integrity", build_steps.BuildCrackmePatchIntegrity(config.elf64_build_path, config.elf64_build_path)),
                     ("generating 32-bit launcher payload data", build_steps.GenerateLaunchpayloadHeader(config.elf64_build_path)),
                     ("building 32-bit launcher", build_steps.BuildCrackmeLauncher(config.elf32_build_path)),
                     ("stripping 32-bit launcher", build_steps.BuildCrackmeStripInternal(config.elf32_build_path, config.elf32_build_path)),
-                    ("creating final message zip", build_steps.MakeEncryptedZip(config.final_mesage_build_path, config.flags[3],  final_message_zip_content)),
+                    ("creating final message zip", build_steps.MakeEncryptedZip(config.final_mesage_build_path, config.flags[2],  final_message_zip_content)),
                     ("creating flag3 zip container", build_steps.MakeEncryptedZip(config.flag3_zip_build_path, config.flags[0] + " " + config.flags[1],  flag3_zip_content)),
                     ("inserting qr code into hidden layer", build_steps.PdfInsertBlockQrCode(
                         config.hidden_layer_base, hidden_layer_temp.name,

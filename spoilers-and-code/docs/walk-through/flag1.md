@@ -7,7 +7,7 @@ Most PDF reader software will let you select it using your cursor, afterwhich yo
 If you're feeling terminal today and have [`pdftotext`](https://linux.die.net/man/1/pdftotext) installed you can also pull it directly out the CV with.
 
 ```bash
-glim@ephemeral014:~$ pdftotext cv.pdf | grep -i flag | head -n 1
+glim@ephemeral014:~$ pdftotext cv.pdf - | grep -i flag | head -n 1
 FLAG 1: FLAG1DEBUG
 ```
 
