@@ -34,7 +34,7 @@ class Build(CvActionBase):
     #  @param argument_parser to subparser created for this commands arguments.
     @classmethod
     def configure_cli_parser(cls, argument_parser:ArgumentParser) -> None:
-        argument_parser.add_argument('-c' ,'--configuration', type=FileType("r"),
+        argument_parser.add_argument('-c' ,'--configuration', type=Path,
             default=cls.DefaultConfigurationFile,
             help="The location of the configuration file." 
         )
